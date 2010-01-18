@@ -1,0 +1,7 @@
+from smartlinks.search_types import SearchField, SearchType
+
+SMARTLINKS = (
+    (('v', 'venue',), 'whats_on.Venue', {"search_field": SearchField("name")}),
+    (('x', 'exhibition',), "whats_on.Exhibition", {"search_field": SearchField("title"), "disambiguator": SearchField("start.year", SearchType.equals)}),
+    (('',), "lumpypages.LumpyPage", {"search_field": SearchField("title"), "disambiguator": SearchField("url")}),
+)

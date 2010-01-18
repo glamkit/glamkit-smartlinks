@@ -1,0 +1,8 @@
+*~
+*.cm
+*.class
+*.pyc
+*.pyd
+*.so
+local_settings.py
+*.db
