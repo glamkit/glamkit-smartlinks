@@ -1,10 +1,15 @@
+=================
 DJANGO-SMARTLINKS
-the Interaction Consortium
+================
+
+-----------------------------
+by the Interaction Consortium
+-----------------------------
 
 DESCRIPTION
------------
+===========
 Introduction to Smartlinks
-Smartlinks are a way to allow content editors to create a ‘link’ to what is usually a django model instance, by typing some smartlink markup into content in the admin interface (or conceivably anywhere). They are somewhat inspired by the internal links syntax on wiki. The link relies on an editor's understanding of the page to link to, rather than any particular knowledge of the underlying model or the site's URLconf. A typical example:
+Smartlinks are a way to allow content editors to create a ‘link’ to what is usually a django model instance, by typing some smartlink markup into content in the admin interface (or conceivably anywhere). They are inspired by the internal links syntax on wiki. One can think of them as wiki links on steroids - much more powerful and customisable. The link relies on an editor's understanding of the page to link to, rather than any particular knowledge of the underlying model or the site's URLconf. A typical example:
 
 [title[Mad Max]] is transformed to <a href="/title/mad-max/">Mad Max</a>
 but you could also use, depending on preference or circumstance:
@@ -21,7 +26,7 @@ If several items are found, then a <cite class="ambiguous"> is returned by defau
 
 
 INSTALLATION
-------------
+============
 To add smartlinks to your django project:
 Getting started is easy:
 
@@ -46,7 +51,7 @@ Smartlinks have the form
 
 [shortcut[link_text]link_suffix]
 
-shortcut is used to find the model, as defined in the @smartlinkable decorator.
+shortcut is used to find the model, as defined in the SMARTLINKS variable
 
 link_text is used to find the model instance, and is (by default) the text of the hyperlink
 
@@ -54,7 +59,54 @@ link_suffix is normally used to disambiguate the model instance in a way that do
 
 You can also choose to use link_text and suffix in a different way for each model, by writing a custom smartlinks resolver.
 
-Implementing a Custom Smartlinks Resolver
+CONFIGURATION
+=============
+
+SMARTLINKS settings variable
+----------------------------
+
+Here is example of smartlinks configuration::
+
+    from smartlinks.search_types import SearchField, SearchType
+
+    SMARTLINKS = (
+        (('m', 'Movie',), 'collection.Move', {}),
+        (('v', 'venue',), 'whats_on.Venue', {"search_field": SearchField("name")}),
+        (('x', 'exhibition',), "whats_on.Exhibition", {"search_field": SearchField("title"), "disambiguator": SearchField("start.year", SearchType.equals)}),
+        (('',), "lumpypages.LumpyPage", {"search_field": SearchField("title"), "disambiguator": SearchField("url")}),
+    )
+
+The syntax for the rule is ((<tuple containing possible prefixes>), <path to the model, as in app_name.model_name>, <options>).
+(We are making an assumption that each model defined in SMARTLINKS has a corresponding url, which is specified either through get_absolute_url() or through a custom smartlinks-specific hook)
+
+Prefix defines which model will 'render' the smartlink. The order of models specified in SMARTLINKS matters - it specifies in which order models will try to render a smartlink (i.e. if first model finds no match, second one tries to render it, etc.). Also, if no prefix is specified in the smartlinks, all models get turns in trying to render it, in the specified order.
+
+
+Smartlinks hooks
+----------------
+x 'get_from_smartlink' function in model manager - getting the instance. For example::
+    
+    def get_from_smartlink(self, link_text, disambiguator=None, arg=None):
+        if disambiguator:
+            # disambiguator has to be a number
+            try:
+                no = int(disambiguator)
+            except ValueError:
+                raise Person.DoesNotExist
+            return self.model.objects.get(name__iexact=link_text, no=no)
+        return self.model.objects.get(name__iexact=link_text)
+        
+x 'smartlink_fallback' function in model manager - what happens when no corresponding entity is found::
+    
+    def smartlink_fallback(self, link_text, disambiguator=None, arg=None):
+        return '<cite class="unresolved">%s</cite>' % link_text
+
+x 'smartlink' function in model definition - how smartlink should be rendered. In case if it's not specified, a link to the model (with url from get_absolute_url) and a text inside a smartlink is generated::
+    
+    def smartlink(self, search_term):
+        return '<a href="/person/%s/">%s</a>' % (self.slug, search_term)
+
+
 By default, smartlinks are resolved by a simple Person.objects.get(<default_field>=<link_text>, <suffix_field>=<suffix>)
 
 If the model's manager has a get_from_smartlink method, then that is used instead. The parameters of get_from_smartlink are:
