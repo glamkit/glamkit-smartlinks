@@ -22,7 +22,9 @@ The text in between the innermost square brackets is the linked text, by default
 
 If no item can be found, then a <cite class="unresolved"> is returned by default, e.g. [t[Mad Megan]] becomes <cite class="unresolved">Mad Megan</cite>. When a Mad Megan item is created, the link starts working. This means that editors can put smartlinks in for items that do not exist yet.
 
-If several items are found, then a <cite class="ambiguous"> is returned by default, e.g. [t[On Our Selection]] becomes <cite class="ambiguous">On Our Selection</cite>. Ambiguous items can be resolved by adding a disambiguator, either in the link text ([t[On Our Selection (1920)]]) or after the innermost brackets ([t[On Our Selection]1920]]).
+If several items are found, then a <cite class="ambiguous"> is returned by default, e.g. [t[On Our Selection]] becomes <cite class="ambiguous">On Our Selection</cite>.
+
+Ambiguous items can be resolved by adding a disambiguator after the innermost brackets ([t[On Our Selection]1920]]).
 
 
 INSTALLATION
@@ -82,6 +84,7 @@ The syntax for the rule is ((<tuple containing possible prefixes>), <path to the
 Prefix defines which model will 'render' the smartlink. The order of models specified in SMARTLINKS matters - it specifies in which order models will try to render a smartlink (i.e. if first model finds no match, second one tries to render it, etc.). Also, if no prefix is specified in the smartlinks, all models get turns in trying to render it, in the specified order.
 
 
+
 Smartlinks hooks
 ----------------
 x 'get_from_smartlink' function in model manager - getting the instance. For example::
@@ -105,32 +108,8 @@ x 'smartlink' function in model definition - how smartlink should be rendered. I
     
     def smartlink(self, search_term):
         return '<a href="/person/%s/">%s</a>' % (self.slug, search_term)
-
-
-By default, smartlinks are resolved by a simple Person.objects.get(<default_field>=<link_text>, <suffix_field>=<suffix>)
-
-If the model's manager has a get_from_smartlink method, then that is used instead. The parameters of get_from_smartlink are:
-
-shortcut
-link_text
-link_suffix
-context
-Which are the components of the smartlink, plus the context of the template at the point of the {% smartlinks %} tag. This manager function can use these in whichever way it sees fit to return:
-
-items, a queryset of matching items.
-If items.count() is 0 (meaning item is null) or  items.count() > 1 the link normally fails, and a <cite> is returned.
-
-Implementing a Custom Smartlinks Renderer
-By default, smartlinks are parsed to:
-
-'<a href="%s">%s</a>' % (items[0].get_absolute_url(), link_text)
-or, if items.count == 0
-
-'<cite class="unresolved">%s</cite>' % link_text
-or, if items.count > 1
-
-'<cite class="ambiguous">%s</cite>' % link_text
-You can override the link behaviour by defining a smartlink(self, shortcut, link_text, suffix, context) function on the model, which returns a string (i.e. an HTML link).
-
-You can override the fallback behaviour by defining the class method Model.smartlink_fallback(items, shortcut, link_text, suffix, context), which returns a string (i.e. a <cite>, or a search link, or a list of links to each item in items).
-
+        
+        
+Options syntax
+--------------
+Usually, all we want from a smart link is to search a given model using given search type, so defining a custom hook seems like an overkill. In that case, smartlinks extra options are helpful. "search_field" specifies what field should be searched and how it should be searched, disambiguator, obviously, does the same thing for the disambiguator.
