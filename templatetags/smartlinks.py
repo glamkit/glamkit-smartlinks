@@ -116,14 +116,6 @@ class SmartLinksParser(object):
         return self._return_unresolved()
         
     def _parse_smartlink(self):
-        # very-very-ugly hardcoded bit
-        # to be removed, hopefuly soon
-        # (and better integration with mongo
-        # needs to be introduced) 
-        if self.model_name == "c":
-            return "<a href='%s'>%s</a>" % (reverse("collection_item", args=[slugify(self.disambiguator)]), self.search_term)
-        
-        # back to pretty code:
         try:
             model = smartlinked_models[self.model_name]
         except KeyError:
