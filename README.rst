@@ -1,6 +1,6 @@
 =================
 DJANGO-SMARTLINKS
-================
+=================
 
 -----------------------------
 by the Interaction Consortium
