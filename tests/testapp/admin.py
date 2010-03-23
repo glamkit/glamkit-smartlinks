@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from myapp.models import *
+from models import *
 
 class PersonOptions(admin.ModelAdmin):
     pass
@@ -17,4 +17,4 @@ class PostOptions(admin.ModelAdmin):
 admin.site.register(Person, PersonOptions)
 admin.site.register(Title, TitleOptions)
 admin.site.register(Clip, ClipOptions)
-admin.site.register(Post, PostOptions)
+#admin.site.register(Post, PostOptions)

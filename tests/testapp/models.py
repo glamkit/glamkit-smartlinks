@@ -30,7 +30,7 @@ class Person(models.Model):
     def smartlink(self, search_term):
         return '<a href="/person/%s/">%s</a>' % (self.slug, search_term)
     
-    def save(self, force_insert=False):
+    def save(self, force_insert=False, *args, **kwargs):
         if not self.no:
             if not Person.objects.filter(name__iexact=self.name).count():
                 self.no = 1
@@ -38,7 +38,7 @@ class Person(models.Model):
                 self.no = Person.objects.filter(name__iexact=self.name).order_by('-no')[0].no + 1
         if not self.slug:
             self.slug = slugify(self.name + u" %s" % self.no)
-        super(Person, self).save(force_insert=False)
+        super(Person, self).save(force_insert=False, *args, **kwargs)
     
     def __unicode__(self):
         return u"%s (%s)" % (self.name, self.no)
@@ -75,10 +75,10 @@ class Title(models.Model):
     def get_absolute_url(self):
         return "/title/%s/" % self.slug
         
-    def save(self, force_insert=False):
+    def save(self, force_insert=False, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name+u" (%s)" % self.year)
-        super(Title, self).save(force_insert=False)
+        super(Title, self).save(force_insert=False, *args, **kwargs)
     
     def __unicode__(self):
         return u"%s (%s)" % (self.name, self.year)
