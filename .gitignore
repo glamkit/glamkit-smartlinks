@@ -6,3 +6,4 @@
 *.so
 local_settings.py
 *.db
+glamkit_smartlinks.egg-info
