@@ -27,8 +27,11 @@ class Person(models.Model):
     
     objects = PersonManager()
         
-    def smartlink(self, search_term):
-        return '<a href="/person/%s/">%s</a>' % (self.slug, search_term)
+    def smartlink(self, search_term, title='', **kwargs):
+        extra = ''
+        if 'class' in kwargs:
+            extra = ' class="%s"' % kwargs["class"]
+        return '<a href="/person/%s/" title="%s"%s>%s</a>' % (self.slug, title, extra, search_term)
     
     def save(self, force_insert=False, *args, **kwargs):
         if not self.no:
@@ -140,8 +143,8 @@ class Clip(models.Model):
     def get_video(self):
         return '<embed type="video">%s</embed>' % self.video
         
-    def get_keyframe(self):
-        return '<img src="%s" />' % self.keyframe
+    def get_keyframe(self, alt=""):
+        return '<img src="%s" alt="%s" />' % (self.keyframe, alt)
     
     def smartlink(self, search_term):
         return '<a href="%sclip/%s/">%s</a>' % (self.film.get_absolute_url(), self.number, search_term)
