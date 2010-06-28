@@ -12,7 +12,11 @@ from ..smartlinks.utils import smartlinksconf
 
 register = template.Library()
 
-smartlinked_models = smartlinksconf(settings.SMARTLINKS)
+smartlinked_models = None
+def configure():
+    global smartlinked_models
+    smartlinked_models = smartlinksconf(settings.SMARTLINKS)
+configure()
 
 smartlink_finder = re.compile(r"""
                     (?<![\\])                                        # do NOT match things preceded by a slash
@@ -22,7 +26,7 @@ smartlink_finder = re.compile(r"""
                             \[
                                 \s* (?P<SearchTerm>[-\w\'\"<>:\s\(\)]+) \s*   # query string
                             \] \s*
-                        ((?P<Options>[\w\. /\\|=]+))?                    # options
+                        ((?P<Options>[\w\. /\\|\(\)=]+))?                    # options
                     \]
                     """,
                     re.VERBOSE)
