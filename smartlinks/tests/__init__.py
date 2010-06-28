@@ -24,7 +24,10 @@ class SmartLinksTest(unittest.TestCase):
             (('p', 'person',), "testapp.Person", {}),
             (('c', 'clip',), "testapp.Clip", {"allowed_embeds": {"keyframe": "get_keyframe", "video": "get_video"}}),
         )
-        
+
+        from smartlinks.templatetags.smartlinks import configure
+        configure()
+
         template = Template("{% load smartlinks %}{{ dat|smartlinks }}")
         template_arg = Template("{% load smartlinks %}{{ dat|smartlinks:arg }}")
 
@@ -59,6 +62,8 @@ class SmartLinksTest(unittest.TestCase):
         [c.delete() for c in Title.objects.all()]
         [c.delete() for c in Person.objects.all()]
         settings.INSTALLED_APPS = self.old_INSTALLED_APPS
+        from smartlinks.templatetags.smartlinks import configure
+        configure()
 
     def testDumblinks(self):
         #No model = dumblink, and will search through models in some (what?) order. Where should this be defined?
