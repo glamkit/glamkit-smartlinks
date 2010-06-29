@@ -173,8 +173,8 @@ class SmartLinksTest(unittest.TestCase):
             self.ae(1, 0, "expecting exception but none caught")
         except TemplateSyntaxError, e:
             # this is how django's template system formats its exception message (subject to change!)
-            self.ae(e.message, "Caught TypeError while rendering: smartlink() got an unexpected keyword argument 'resolution'",
-                    "wrong exception caught? e.message = %s" % e.message)
+            self.ae(str(e), "Caught TypeError while rendering: smartlink() got an unexpected keyword argument 'resolution'",
+                    "wrong exception caught? e.message = %s" % str(e))
 
 
     def testFailing(self):
