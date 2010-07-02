@@ -1,6 +1,6 @@
 import unittest
 
-from django.template import Template, Context
+from django.template import Template, Context, TemplateSyntaxError
 from django.core.management import call_command
 from django.db.models.loading import load_app
 
@@ -24,7 +24,10 @@ class SmartLinksTest(unittest.TestCase):
             (('p', 'person',), "testapp.Person", {}),
             (('c', 'clip',), "testapp.Clip", {"allowed_embeds": {"keyframe": "get_keyframe", "video": "get_video"}}),
         )
-        
+
+        from smartlinks.templatetags.smartlinks import configure
+        configure()
+
         template = Template("{% load smartlinks %}{{ dat|smartlinks }}")
         template_arg = Template("{% load smartlinks %}{{ dat|smartlinks:arg }}")
 
@@ -59,13 +62,15 @@ class SmartLinksTest(unittest.TestCase):
         [c.delete() for c in Title.objects.all()]
         [c.delete() for c in Person.objects.all()]
         settings.INSTALLED_APPS = self.old_INSTALLED_APPS
+        from smartlinks.templatetags.smartlinks import configure
+        configure()
 
     def testDumblinks(self):
         #No model = dumblink, and will search through models in some (what?) order. Where should this be defined?
         #Title
         self.ae(smartlink('[[Mad Max]]'), '<a href="/title/mad-max-1979/">Mad Max</a>')
         #Person
-        self.ae(smartlink('[[Chips Rafferty]]'), '<a href="/person/chips-rafferty-1/">Chips Rafferty</a>')
+        self.ae(smartlink('[[Chips Rafferty]]'), '<a href="/person/chips-rafferty-1/" title="">Chips Rafferty</a>')
         #Ambiguous searches - is the best thing (for dumb users) to link to a search?
         self.ae(smartlink('[[On Our Selection]]'), '<cite class="ambiguous">On Our Selection</cite>')
         
@@ -117,7 +122,7 @@ class SmartLinksTest(unittest.TestCase):
         
     def testCaseInsensitivity(self):
         #Person. Case insensitive.
-        self.ae(smartlink('[pErSoN[cHiPs RaFfErTy]]'), '<a href="/person/chips-rafferty-1/">cHiPs RaFfErTy</a>') 
+        self.ae(smartlink('[pErSoN[cHiPs RaFfErTy]]'), '<a href="/person/chips-rafferty-1/" title="">cHiPs RaFfErTy</a>') 
 
         #Specifying the wrong model fails.
         self.ae(smartlink('[t[Chips Rafferty]]'), '<cite class="unresolved">Chips Rafferty</cite>')
@@ -127,7 +132,7 @@ class SmartLinksTest(unittest.TestCase):
         self.ae(smartlink('[x[Chips Rafferty]]'), "[x[Chips Rafferty]]")
 
         #(Probably redundant) Check that appropriate link is returned
-        self.ae(smartlink('[p[Sol Ipsist]]'), '<a href="/person/sol-ipsist-1/">Sol Ipsist</a>')
+        self.ae(smartlink('[p[Sol Ipsist]]'), '<a href="/person/sol-ipsist-1/" title="">Sol Ipsist</a>')
         self.ae(smartlink('[t[Sol Ipsist]]'), '<a href="/title/sol-ipsist-2009/">Sol Ipsist</a>')
 
         #Searches that don't match anything are unresolved
@@ -137,9 +142,19 @@ class SmartLinksTest(unittest.TestCase):
         #Searches that match more than one thing are ambiguous
         self.ae(smartlink('[p[George Miller]]'), '<cite class="ambiguous">George Miller</cite>')
 
+        #Options are ignored when result is ambiguous
+        self.ae(smartlink('[p[George Miller]|the man]'), '<cite class="ambiguous">George Miller</cite>')
+
         #Unambiguous person
-        self.ae(smartlink('[p[George Miller]1]'), '<a href="/person/george-miller-1/">George Miller</a>')
+        self.ae(smartlink('[p[George Miller]1]'), '<a href="/person/george-miller-1/" title="">George Miller</a>')
         
+        #Disambiguated, with options
+        self.ae(smartlink('[p[George Miller]1|the man]'), '<a href="/person/george-miller-1/" title="the man">George Miller</a>')
+        self.ae(smartlink('[p[George Miller]1|the man|class=vip]'), '<a href="/person/george-miller-1/" title="the man" class="vip">George Miller</a>')
+        self.ae(smartlink('[p[George Miller]1|title=the man|class=vip]'), '<a href="/person/george-miller-1/" title="the man" class="vip">George Miller</a>')
+
+        #Person.smartlink declares kwargs and ignores anything it doesn't know about
+        self.ae(smartlink('[p[George Miller]1|title=the man|class=vip|extraneous=foo]'), '<a href="/person/george-miller-1/" title="the man" class="vip">George Miller</a>')
 
 
         #specify clip number. can use 'from' or 'of'
@@ -151,6 +166,16 @@ class SmartLinksTest(unittest.TestCase):
         #really? (don't worry, it's irrelevant for the generic smartlinks API)
         self.ae(smartlink('[c[Clip four hundred and thirty seven from Mad Max]]'), '<a href="/title/mad-max-1979/clip/437/">Clip four hundred and thirty seven from Mad Max</a>')
         self.ae(smartlink('[c[Clip four hundred thirty-seven from Mad Max]]'), '<a href="/title/mad-max-1979/clip/437/">Clip four hundred thirty-seven from Mad Max</a>')
+
+        # Clip.smartlink doesn't define *args and **kwargs, so we should get an error if options are specified
+        try:
+            smartlink('[c[Clip four hundred thirty-seven from Mad Max]|resolution=low]')
+            self.ae(1, 0, "expecting exception but none caught")
+        except TemplateSyntaxError, e:
+            # this is how django's template system formats its exception message (subject to change!)
+            self.ae(str(e), "Caught TypeError while rendering: smartlink() got an unexpected keyword argument 'resolution'",
+                    "wrong exception caught? e.message = %s" % str(e))
+
 
     def testFailing(self):
         #these should fail silently
@@ -231,7 +256,9 @@ class SmartLinksTest(unittest.TestCase):
         self.ae(smartlink('[t[]1920]'), "[t[]1920]")
         
     def testSmartEmbeds(self):
-        self.ae(smartlink('{c.keyframe{on-our-selection-1930}1}'), '<img src="/media/img/img1.jpg" />')
-        self.ae(smartlink('{c.keyframe     {on-our-selection-1930}1}'), '<img src="/media/img/img1.jpg" />')
+        self.ae(smartlink('{c.keyframe{on-our-selection-1930}1}'), '<img src="/media/img/img1.jpg" alt="" />')
+        self.ae(smartlink('{c.keyframe{on-our-selection-1930}1|alt=On Our Selection (1930)}'),
+                          '<img src="/media/img/img1.jpg" alt="On Our Selection (1930)" />')
+        self.ae(smartlink('{c.keyframe     {on-our-selection-1930}1}'), '<img src="/media/img/img1.jpg" alt="" />')
         self.ae(smartlink('{c.video{far-from-home-1999}1}'), '<embed type="video">/media/video/video1.flv</embed>')
         self.ae(smartlink('{c.keyframe{mad-max-1979}100}'), '')

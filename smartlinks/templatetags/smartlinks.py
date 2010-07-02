@@ -6,12 +6,17 @@ from django.conf import settings
 from django import template
 from django.utils.safestring import mark_safe
 from django.core.urlresolvers import reverse
+from django.utils.encoding import smart_str
 
 from ..smartlinks.utils import smartlinksconf
 
 register = template.Library()
 
-smartlinked_models = smartlinksconf(settings.SMARTLINKS)
+smartlinked_models = None
+def configure():
+    global smartlinked_models
+    smartlinked_models = smartlinksconf(settings.SMARTLINKS)
+configure()
 
 smartlink_finder = re.compile(r"""
                     (?<![\\])                                        # do NOT match things preceded by a slash
@@ -21,7 +26,7 @@ smartlink_finder = re.compile(r"""
                             \[
                                 \s* (?P<SearchTerm>[-\w\'\"<>:\s\(\)]+) \s*   # query string
                             \] \s*
-                        ((?P<Disambiguator>[\w\. /]+))?                    # disambiguator
+                        ((?P<Options>[\w\. /\\|\(\)=]+))?                    # options
                     \]
                     """,
                     re.VERBOSE)
@@ -33,7 +38,7 @@ smartembed_finder = re.compile(r"""
                             (?P<Slug>[\w-]+)
                         \}
                         \s*
-                        ((?P<Disambiguator>\w+))?
+                        ((?P<Options>[\w\. /\\|\(\)=]+))?
                         \s*
                     \}
                     """,
@@ -61,7 +66,7 @@ class SmartLinksParser(object):
         link corresponding to the object obj
         """
         if hasattr(obj, "smartlink"):
-            return obj.smartlink(self.search_term)
+            return obj.smartlink(self.search_term, *self.args, **self.kwargs)
         else:
             url = obj.get_absolute_url() # should never raise attribute error
             return '<a href="%s">%s</a>' % (url, self.search_term)
@@ -140,8 +145,11 @@ class SmartLinksParser(object):
         
         self.search_term = match.group("SearchTerm").strip()
         self.model_name = match.group("ModelName")
-        self.disambiguator = match.group("Disambiguator")
         self.optional_space = match.group("OptionalSpace")
+        self.args, self.kwargs = self._parse_options(match.group("Options"))
+        self.disambiguator = None
+        if self.args:
+            self.disambiguator = self.args.pop(0)
 
         self.is_dumb = self.model_name is None and not "" in smartlinked_models
         self.model_name = self.model_name.lower() if self.model_name else '' # convert None to ''
@@ -150,6 +158,26 @@ class SmartLinksParser(object):
             return self._parse_dumblink()
         return self._parse_smartlink()
         
+
+
+    def _parse_options(self, value):
+        args = []
+        kwargs = {}
+        if value:
+            kvpairs = value.split("|")
+            for kv in kvpairs:
+                kv = kv.strip()
+
+                if '=' not in kv:
+                    args.append(kv)
+                else:
+                    k, v = kv.split("=")
+                    k = k.strip()
+                    v = v.strip()
+                    kwargs.update([(smart_str(k),v)])
+        return args, kwargs
+
+
 class SmartEmbedsParser(SmartLinksParser):
     def _fail(self):
         return u""
@@ -158,7 +186,7 @@ class SmartEmbedsParser(SmartLinksParser):
        return model.objects.get_from_smartembed(slug=self.slug, disambiguator=self.disambiguator, arg=self.arg)
         
     def _handle_object(self, obj):
-       return getattr(obj, obj.smartlink_opts["allowed_embeds"][self.embed_type])()
+       return getattr(obj, obj.smartlink_opts["allowed_embeds"][self.embed_type])(*self.args, **self.kwargs)
         
     def _parse_smartembed(self):
         try:
@@ -183,7 +211,10 @@ class SmartEmbedsParser(SmartLinksParser):
         self.model_name = match.group("ModelName")
         self.embed_type = match.group("EmbedType")
         self.slug = match.group("Slug").strip()
-        self.disambiguator = match.group("Disambiguator")
+        self.args, self.kwargs = self._parse_options(match.group("Options"))
+        self.disambiguator = None
+        if self.args:
+            self.disambiguator = self.args.pop(0)
         
         return self._parse_smartembed()
         
