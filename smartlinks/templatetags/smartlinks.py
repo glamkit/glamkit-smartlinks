@@ -57,7 +57,7 @@ class SmartLinksParser(object):
     def _return_unresolved(self):
         return self._return_cite('class="unresolved"')
         
-    def _return_ambigous(self):
+    def _return_ambiguous(self):
         return self._return_cite('class="ambiguous"')
 
     def _handle_object(self, obj):
@@ -73,7 +73,7 @@ class SmartLinksParser(object):
             
     def _get_object(self, model):
         """
-        x try to get an obect corresponding to the search
+        x try to get an object corresponding to the search
         term & disambiguator and a current model
         
         @returns
@@ -115,7 +115,7 @@ class SmartLinksParser(object):
             except (model.DoesNotExist):
                 continue
             except (model.MultipleObjectsReturned):
-                return self._return_ambigous()
+                return self._return_ambiguous()
         if obj:
             return self._handle_object(obj) 
         return self._return_unresolved()
@@ -128,7 +128,7 @@ class SmartLinksParser(object):
         try:
             obj = self._get_object(model)
         except (model.MultipleObjectsReturned):
-            return self._return_ambigous()            
+            return self._return_ambiguous()            
         except (model.DoesNotExist):
             if hasattr(model.objects, "smartlink_fallback"):
                 return model.objects.smartlink_fallback(self.search_term, disambiguator=self.disambiguator, arg=self.arg)
