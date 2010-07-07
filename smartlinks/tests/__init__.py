@@ -4,11 +4,12 @@ from django.template import Template, Context, TemplateSyntaxError
 from django.core.management import call_command
 from django.db.models.loading import load_app
 
+from smartlinks.search_types import SearchField, SearchType
 from django.conf import settings
 
 class SmartLinksTest(unittest.TestCase):
     def setUp(self):
-        global smartlink, Person, Title, Clip
+        global smartlink, Person, Title, Clip, Dog
         
         self.old_INSTALLED_APPS = settings.INSTALLED_APPS
         settings.INSTALLED_APPS += ['smartlinks.tests.testapp']
@@ -17,12 +18,13 @@ class SmartLinksTest(unittest.TestCase):
         call_command('flush', verbosity=0, interactive=False)
         call_command('syncdb', verbosity=0, interactive=False)
         
-        from testapp.models import Person, Title, Clip
+        from testapp.models import Person, Title, Clip, Dog
         
         settings.SMARTLINKS = (
             (('t', 'title',), "testapp.Title", {}),
             (('p', 'person',), "testapp.Person", {}),
             (('c', 'clip',), "testapp.Clip", {"allowed_embeds": {"keyframe": "get_keyframe", "video": "get_video"}}),
+            (('d', 'dog',), "testapp.Dog", {'search_field': SearchField('name'), 'disambiguator': SearchField('breed')}),
         )
 
         from smartlinks.templatetags.smartlinks import configure
@@ -48,6 +50,12 @@ class SmartLinksTest(unittest.TestCase):
         t3 = Title.objects.create(name="On Our Selection", year=1930, director=p3)
         t4 = Title.objects.create(name="Sol Ipsist", year=2009, director=p4)
         t5 = Title.objects.create(name="Far from home", year=1999, director=p4)
+
+
+        d1 = Dog.objects.create(name="Spotty", breed='Dalmatian')
+        d2 = Dog.objects.create(name="Fluffy", breed='Papillon')
+        d2 = Dog.objects.create(name="Fluffy", breed='Pomeranian')
+        d3 = Dog.objects.create(name="Stripy", breed='french bulldog')
 
         Clip.objects.create(film=t1, number=1)
         Clip.objects.create(film=t1, number=2)
@@ -85,6 +93,15 @@ class SmartLinksTest(unittest.TestCase):
     def testDisambiguators(self):
         #Specify unambiguous title. Alternative model selector
         self.ae(smartlink('[title[Mad Max]]'), '<a href="/title/mad-max-1979/">Mad Max</a>')
+
+        # unambiguous dog
+        self.ae(smartlink('[d[Spotty]]'), '<a href="/dog/Spotty/">Spotty</a>')
+        #disambiguator should be ignored
+        self.ae(smartlink('[d[Spotty]doesnotmatter]'), '<a href="/dog/Spotty/">Spotty</a>')
+        #disambiguator should NOT be ignored (wrong disambiguator, so result is unresolved)
+        self.ae(smartlink('[d[Fluffy]thismatters]'), '<cite class="unresolved">Fluffy</cite>')
+        #correct disambiguator
+        self.ae(smartlink('[d[Fluffy]papillon]'), '<a href="/dog/Fluffy/">Fluffy</a>')
         
         """
         so we are allowing spaces inside ~smart~ links and disallowing them inside dumblinks? 
