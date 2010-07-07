@@ -51,14 +51,14 @@ class SmartLinksParser(object):
     def _return_identity(self):
         return self.match.group()
         
-    def _return_cite(self, cls=""):
-        return "<cite %s>%s</cite>" % (cls, self.search_term)
+    def _return_span(self, cls=""):
+        return "<span %s>%s</span>" % (cls, self.search_term)
         
     def _return_unresolved(self):
-        return self._return_cite('class="unresolved"')
+        return self._return_span('class="smartlinks-unresolved"')
         
     def _return_ambigous(self):
-        return self._return_cite('class="ambiguous"')
+        return self._return_span('class="smartlinks-ambiguous"')
 
     def _handle_object(self, obj):
         """

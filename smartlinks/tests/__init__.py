@@ -80,7 +80,7 @@ class SmartLinksTest(unittest.TestCase):
         #Person
         self.ae(smartlink('[[Chips Rafferty]]'), '<a href="/person/chips-rafferty-1/" title="">Chips Rafferty</a>')
         #Ambiguous searches - is the best thing (for dumb users) to link to a search?
-        self.ae(smartlink('[[On Our Selection]]'), '<cite class="ambiguous">On Our Selection</cite>')
+        self.ae(smartlink('[[On Our Selection]]'), '<span class="smartlinks-ambiguous">On Our Selection</span>')
         
         
         #Unambiguous Title
@@ -99,7 +99,7 @@ class SmartLinksTest(unittest.TestCase):
         #disambiguator should be ignored
         self.ae(smartlink('[d[Spotty]doesnotmatter]'), '<a href="/dog/Spotty/">Spotty</a>')
         #disambiguator should NOT be ignored (wrong disambiguator, so result is unresolved)
-        self.ae(smartlink('[d[Fluffy]thismatters]'), '<cite class="unresolved">Fluffy</cite>')
+        self.ae(smartlink('[d[Fluffy]thismatters]'), '<span class="smartlinks-unresolved">Fluffy</span>')
         #correct disambiguator
         self.ae(smartlink('[d[Fluffy]papillon]'), '<a href="/dog/Fluffy/">Fluffy</a>')
         
@@ -111,10 +111,10 @@ class SmartLinksTest(unittest.TestCase):
         self.ae(smartlink('[t    [Mad Max]   1979     ]'), '<a href="/title/mad-max-1979/">Mad Max</a>')
     
         #Incorrect disambiguator/year - unresolved
-        self.ae(smartlink('[t[Mad Max]1949]'), '<cite class="unresolved">Mad Max</cite>')
+        self.ae(smartlink('[t[Mad Max]1949]'), '<span class="smartlinks-unresolved">Mad Max</span>')
 
         #Ambiguous Title
-        self.ae(smartlink('[t[On Our Selection]]'), '<cite class="ambiguous">On Our Selection</cite>')
+        self.ae(smartlink('[t[On Our Selection]]'), '<span class="smartlinks-ambiguous">On Our Selection</span>')
         #Disambiguator
         self.ae(smartlink('[t[On Our Selection]1920]'), '<a href="/title/on-our-selection-1920/">On Our Selection</a>') #not sure how ASO does disambiguation in URLs, but it can be defined in the actual Title.smartlink function
         
@@ -125,9 +125,9 @@ class SmartLinksTest(unittest.TestCase):
         
         #Other disambiguator in link text
         self.ae(smartlink('[t[On Our Selection (1930)]]'), '<a href="/title/on-our-selection-1930/">On Our Selection (1930)</a>')
-        self.ae(smartlink('[t[Mad Max (1949)]]'), '<cite class="unresolved">Mad Max (1949)</cite>')
+        self.ae(smartlink('[t[Mad Max (1949)]]'), '<span class="smartlinks-unresolved">Mad Max (1949)</span>')
         #Can't do this (only because it's not set up to happen with Persons)
-        self.ae(smartlink('[p[George Miller (1)]]'), '<cite class="unresolved">George Miller (1)</cite>')
+        self.ae(smartlink('[p[George Miller (1)]]'), '<span class="smartlinks-unresolved">George Miller (1)</span>')
         
         #But spaces at the edge are NOT significant
         self.ae(smartlink('[t[ Mad Max (1979)]]'), '<a href="/title/mad-max-1979/">Mad Max (1979)</a>')
@@ -142,7 +142,7 @@ class SmartLinksTest(unittest.TestCase):
         self.ae(smartlink('[pErSoN[cHiPs RaFfErTy]]'), '<a href="/person/chips-rafferty-1/" title="">cHiPs RaFfErTy</a>') 
 
         #Specifying the wrong model fails.
-        self.ae(smartlink('[t[Chips Rafferty]]'), '<cite class="unresolved">Chips Rafferty</cite>')
+        self.ae(smartlink('[t[Chips Rafferty]]'), '<span class="smartlinks-unresolved">Chips Rafferty</span>')
         
         
         #Specifying a model that doesn't exist returns identity - in case the user is doing something else.
@@ -153,14 +153,14 @@ class SmartLinksTest(unittest.TestCase):
         self.ae(smartlink('[t[Sol Ipsist]]'), '<a href="/title/sol-ipsist-2009/">Sol Ipsist</a>')
 
         #Searches that don't match anything are unresolved
-        self.ae(smartlink('[t[Foo]]'), '<cite class="unresolved">Foo</cite>')
-        self.ae(smartlink('[t[Foo]Bar]'), '<cite class="unresolved">Foo</cite>')
+        self.ae(smartlink('[t[Foo]]'), '<span class="smartlinks-unresolved">Foo</span>')
+        self.ae(smartlink('[t[Foo]Bar]'), '<span class="smartlinks-unresolved">Foo</span>')
 
         #Searches that match more than one thing are ambiguous
-        self.ae(smartlink('[p[George Miller]]'), '<cite class="ambiguous">George Miller</cite>')
+        self.ae(smartlink('[p[George Miller]]'), '<span class="smartlinks-ambiguous">George Miller</span>')
 
         #Options are ignored when result is ambiguous
-        self.ae(smartlink('[p[George Miller]|the man]'), '<cite class="ambiguous">George Miller</cite>')
+        self.ae(smartlink('[p[George Miller]|the man]'), '<span class="smartlinks-ambiguous">George Miller</span>')
 
         #Unambiguous person
         self.ae(smartlink('[p[George Miller]1]'), '<a href="/person/george-miller-1/" title="">George Miller</a>')
@@ -204,8 +204,8 @@ class SmartLinksTest(unittest.TestCase):
         # invalid titles fail silently
         self.ae(smartlink('[c[Clip 1 from Foo]]'), '<cite class="unresolved">Clip 1 from Foo</cite>')
 
-        # ambiguous titles fail silently
-        self.ae(smartlink('[c[Clip 1 from On Our Selection]]'), '<cite class="ambiguous">Clip 1 from On Our Selection</cite>')
+        # ambiguous titles fail silently (but gets a span instead of cite because we don't have a callback for rendering ambiguous links)
+        self.ae(smartlink('[c[Clip 1 from On Our Selection]]'), '<span class="smartlinks-ambiguous">Clip 1 from On Our Selection</span>')
         # unambiguous titles do not fail
         self.ae(smartlink('[c[Clip 1 from On Our Selection (1930)]]'), '<a href="/title/on-our-selection-1930/clip/1/">Clip 1 from On Our Selection (1930)</a>')
         self.ae(smartlink('[c[Clip 1 from On Our Selection]1930]'), '<a href="/title/on-our-selection-1930/clip/1/">Clip 1 from On Our Selection</a>') #necessary?
@@ -256,7 +256,7 @@ class SmartLinksTest(unittest.TestCase):
         self.ae(smartlink('[t[Mad Max(1979)]]'), '<a href="/title/mad-max-1979/">Mad Max(1979)</a>')
         self.ae(smartlink('[t[Mad Max (1979 )]]'), '<a href="/title/mad-max-1979/">Mad Max (1979 )</a>')
         self.ae(smartlink('[t[Mad Max  (1979)]]'), '<a href="/title/mad-max-1979/">Mad Max  (1979)</a>')
-        self.ae(smartlink('[t[Mad  Max (1979)]]'), '<cite class="unresolved">Mad  Max (1979)</cite>')
+        self.ae(smartlink('[t[Mad  Max (1979)]]'), '<span class="smartlinks-unresolved">Mad  Max (1979)</span>')
         
         #this doesn't resolve, but would if '19 30' was a disambiguator.
         self.ae(smartlink('[c[Clip 1 from On Our Selection]19 30 ]'), '<cite class="unresolved">Clip 1 from On Our Selection</cite>')

@@ -15,9 +15,7 @@ class PersonManager(models.Manager):
                 raise Person.DoesNotExist
             return self.model.objects.get(name__iexact=link_text, no=no)
         return self.model.objects.get(name__iexact=link_text)
-        
-    def smartlink_fallback(self, link_text, disambiguator=None, arg=None):
-        return '<cite class="unresolved">%s</cite>' % link_text
+
 
 
 class Person(models.Model):
@@ -63,9 +61,7 @@ class TitleManager(models.Manager):
             if match:
                 return self.model.objects.get(name__iexact=link_text[:match.start()].strip(), year=match.group(1))
             raise e
-        
-    def smartlink_fallback(self, link_text, disambiguator=None, arg=None):
-        return '<cite class="unresolved">%s</cite>' % link_text
+
 
 class Title(models.Model):
     name = models.CharField(max_length=200)
@@ -131,6 +127,9 @@ class ClipManager(models.Manager):
         except (Title.MultipleObjectsReturned):
             raise self.model.MultipleObjectsReturned
         return self.model.objects.get(film=film, number=disambiguator)
+
+    def smartlink_fallback(self, link_text, disambiguator=None, arg=None):
+        return '<cite class="unresolved">%s</cite>' % link_text
 
 class Clip(models.Model):
     film = models.ForeignKey(Title)
