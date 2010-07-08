@@ -156,3 +156,13 @@ class Dog(models.Model):
 
     def get_absolute_url(self):
         return '/dog/%s/' % (self.name) # should escape but this is just a test
+
+
+PERSONALITIES = ['grumpy', 'grouchy']
+class Cat(models.Model):
+    """Smartlinks-unaware model, to test default behaviour"""
+    name = models.CharField(max_length=200)
+    personality = models.CharField(max_length=126, choices=((x,x) for x in PERSONALITIES))
+
+    def get_absolute_url(self):
+        return '/cat/%s-%s/' % (self.personality, self.name) # should escape but this is just a test

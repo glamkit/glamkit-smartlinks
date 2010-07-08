@@ -9,7 +9,7 @@ from django.conf import settings
 
 class SmartLinksTest(unittest.TestCase):
     def setUp(self):
-        global smartlink, Person, Title, Clip, Dog
+        global smartlink, Person, Title, Clip, Dog, Cat
         
         self.old_INSTALLED_APPS = settings.INSTALLED_APPS
         settings.INSTALLED_APPS += ['smartlinks.tests.testapp']
@@ -18,13 +18,18 @@ class SmartLinksTest(unittest.TestCase):
         call_command('flush', verbosity=0, interactive=False)
         call_command('syncdb', verbosity=0, interactive=False)
         
-        from testapp.models import Person, Title, Clip, Dog
+        from testapp.models import Person, Title, Clip, Dog, Cat
         
         settings.SMARTLINKS = (
             (('t', 'title',), "testapp.Title", {}),
             (('p', 'person',), "testapp.Person", {}),
             (('c', 'clip',), "testapp.Clip", {"allowed_embeds": {"keyframe": "get_keyframe", "video": "get_video"}}),
-            (('d', 'dog',), "testapp.Dog", {'search_field': SearchField('name'), 'disambiguator': SearchField('breed')}),
+            (('d', 'dog',), "testapp.Dog", {'search_field': SearchField('name'),
+                                            'disambiguator': SearchField('breed'),
+                                            'key_field': SearchField('id')}),
+            (('cat',), "testapp.Cat", {'search_field': SearchField('personality'),
+                                            'disambiguator': SearchField('id'),
+                                            'key_field': SearchField('name')}),
         )
 
         from smartlinks.templatetags.smartlinks import configure
@@ -56,6 +61,11 @@ class SmartLinksTest(unittest.TestCase):
         d2 = Dog.objects.create(name="Fluffy", breed='Papillon')
         d2 = Dog.objects.create(name="Fluffy", breed='Pomeranian')
         d3 = Dog.objects.create(name="Stripy", breed='french bulldog')
+
+        cat1 = Cat.objects.create(name='Ginger', personality='grouchy')
+        cat2 = Cat.objects.create(name='Roamalot', personality='grumpy')
+        cat3 = Cat.objects.create(name='Dane', personality='grumpy')
+        cat4 = Cat.objects.create(name='Howard', personality='grouchy')
 
         Clip.objects.create(film=t1, number=1)
         Clip.objects.create(film=t1, number=2)
@@ -250,6 +260,69 @@ class SmartLinksTest(unittest.TestCase):
         self.ae(smartlink('[t [Mad Max] 1979]'), '<a href="/title/mad-max-1979/">Mad Max</a>')
         self.ae(smartlink('[t [Mad Max] 1979 ]'), '<a href="/title/mad-max-1979/">Mad Max</a>')
         self.ae(smartlink('[t [Mad Max]   1979   ]'), '<a href="/title/mad-max-1979/">Mad Max</a>')
+
+
+    def testKeyField(self):
+        global Dog, Cat
+        spotty = Dog.objects.get(name='Spotty')
+        roamalot = Cat.objects.get(name='Roamalot')
+
+        # spotty can be linked
+        self.ae(smartlink('[d[Spotty]]'), '<a href="/dog/Spotty/">Spotty</a>')
+        self.ae(smartlink('[d:%d[Spotty]]' % spotty.id), '<a href="/dog/Spotty/">Spotty</a>')
+        #self.ae(smartlink('[d1:Spotty[Spotty]]'), '<a href="/dog/Spotty/">Spotty</a>')
+
+        # empty key term, as if it didn't exist
+        self.ae(smartlink('[d:[Spotty]]'), '<a href="/dog/Spotty/">Spotty</a>')
+
+        # space not allowed before ":"
+        self.ae(smartlink('[d :[Spotty]]'), '[d :[Spotty]]')
+        self.ae(smartlink('[d:   %d[Spotty]]' % spotty.id), '<a href="/dog/Spotty/">Spotty</a>')
+        self.ae(smartlink('[d:   %d    [Spotty]]' % spotty.id), '<a href="/dog/Spotty/">Spotty</a>')
+
+        # change name temporarily
+        spotty.name = 'Spottified'
+        spotty.save()
+
+        # cannot be linked anymore (without key_field)
+        self.ae(smartlink('[d[Spotty]]'), '<span class="smartlinks-unresolved">Spotty</span>')
+
+        # with key_field, still works (with url changed)
+        self.ae(smartlink('[d:%d[Spotty]]' % spotty.id), '<a href="/dog/Spottified/">Spotty</a>')
+
+        # revert
+        spotty.name = 'Spotty'
+        spotty.save()
+
+        # found again
+        self.ae(smartlink('[d[Spotty]]'), '<a href="/dog/Spotty/">Spotty</a>')
+        # url back to /dog/Spotty
+        self.ae(smartlink('[d:%d[Spotty]]' % spotty.id), '<a href="/dog/Spotty/">Spotty</a>')
+
+
+        # try with cats
+        self.ae(smartlink('[cat[grumpy]]'), '<span class="smartlinks-ambiguous">grumpy</span>')
+        # how do I zoom in on a cat? well, there's the traditional disambiguator
+        self.ae(smartlink('[cat[grumpy]%d]' % roamalot.id), '<a href="/cat/grumpy-Roamalot/">grumpy</a>')
+        ### what if I wanted to change the link text?
+
+        # oops! does not work with disambiguator
+        self.ae(smartlink('[cat[one grumpy cat]%d]' % roamalot.id), '<span class="smartlinks-unresolved">one grumpy cat</span>')
+        # you need the key_field
+        self.ae(smartlink('[cat:roamalot[one grumpy cat]]'), '<a href="/cat/grumpy-Roamalot/">one grumpy cat</a>')
+        # once key_field is set and found, the search_field is used for link text, and disambiguator is ignored
+        self.ae(smartlink('[cat:roamalot[grumpy cat]dummy]'), '<a href="/cat/grumpy-Roamalot/">grumpy cat</a>')
+        # but if key_field is not found, behave as if key_field was not there
+        self.ae(smartlink('[cat:nosuchcat[grumpy cat]dummy]'), '<span class="smartlinks-unresolved">grumpy cat</span>')
+        self.ae(smartlink('[cat:nosuchcat[grumpy]dummy]'), '<span class="smartlinks-unresolved">grumpy</span>')
+        self.ae(smartlink('[cat:nosuchcat[grumpy]]'), '<span class="smartlinks-ambiguous">grumpy</span>')
+        self.ae(smartlink('[cat:nosuchcat[grumpy]%d]' % roamalot.id), '<a href="/cat/grumpy-Roamalot/">grumpy</a>')
+
+        self.ae(smartlink('[cat:roamalot[one grumpy cat]]'), '<a href="/cat/grumpy-Roamalot/">one grumpy cat</a>')
+
+        self.ae(smartlink('[cat:ginger[my cat]]'), '<a href="/cat/grouchy-Ginger/">my cat</a>')
+
+
 
     def testSpaces(self):
         #Spaces inside link text ARE significant (by default)
