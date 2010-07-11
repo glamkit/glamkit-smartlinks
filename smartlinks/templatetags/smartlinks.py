@@ -22,6 +22,7 @@ smartlink_finder = re.compile(r"""
                     (?<![\\])                                        # do NOT match things preceded by a slash
                     \[
                         ((?P<ModelName>\w+))?                        # Object name
+                        (\:(?P<KeyTerm>[^\[]+)?)?                        # value to search in key_field
                         ((?P<OptionalSpace>\s+))?                      # optional space
                             \[
                                 \s* (?P<SearchTerm>[-\w\'\"<>:\s\(\)]+) \s*   # query string
@@ -51,14 +52,14 @@ class SmartLinksParser(object):
     def _return_identity(self):
         return self.match.group()
         
-    def _return_cite(self, cls=""):
-        return "<cite %s>%s</cite>" % (cls, self.search_term)
+    def _return_span(self, cls=""):
+        return "<span %s>%s</span>" % (cls, self.search_term)
         
     def _return_unresolved(self):
-        return self._return_cite('class="unresolved"')
+        return self._return_span('class="smartlinks-unresolved"')
         
     def _return_ambiguous(self):
-        return self._return_cite('class="ambiguous"')
+        return self._return_span('class="smartlinks-ambiguous"')
 
     def _handle_object(self, obj):
         """
@@ -84,19 +85,32 @@ class SmartLinksParser(object):
         model.MultipleObjectsReturned
         """
         fields = [f.name for f in model._meta.fields]
-        if "search_field" in model.smartlink_opts:
-            qs = {}
-            sf = model.smartlink_opts["search_field"]
-            qs[sf.generate()] = self.search_term
-            try:
-                return model.objects.get(**qs) # let's pray that wouldn't raise a FieldError...
-            except model.MultipleObjectsReturned:
-                if "disambiguator" in model.smartlink_opts and self.disambiguator:
-                    dmb = model.smartlink_opts["disambiguator"]
-                    qs[dmb.generate()] = self.disambiguator
-                    return model.objects.get(**qs) # try again, it just might give us a single result!
-                else:
-                    raise
+        qs = {}
+
+        key_field = model.smartlink_opts.get('key_field')
+        search_field = model.smartlink_opts.get('search_field')
+
+        if key_field or search_field:
+            if key_field and self.key_term:
+                qs[key_field.generate()] = self.key_term
+                try:
+                    return model.objects.get(**qs) # let's pray that wouldn't raise a FieldError...
+                except model.MultipleObjectsReturned:
+                    pass
+                except model.DoesNotExist:
+                    qs = {} # reset it (so we can try search_field)
+
+            if search_field:
+                qs[search_field.generate()] = self.search_term
+                try:
+                    return model.objects.get(**qs) # let's pray that wouldn't raise a FieldError...
+                except model.MultipleObjectsReturned:
+                    if "disambiguator" in model.smartlink_opts and self.disambiguator:
+                        dmb = model.smartlink_opts["disambiguator"]
+                        qs[dmb.generate()] = self.disambiguator
+                        return model.objects.get(**qs) # try again, it just might give us a single result!
+                    else:
+                        raise
         else:
             if hasattr(model.objects, "get_from_smartlink"):
                 obj = model.objects.get_from_smartlink(self.search_term, disambiguator=self.disambiguator, arg=self.arg)
@@ -149,6 +163,9 @@ class SmartLinksParser(object):
         
         self.search_term = match.group("SearchTerm").strip()
         self.model_name = match.group("ModelName")
+        self.key_term = match.group("KeyTerm")
+        if self.key_term:
+            self.key_term = self.key_term.strip()
         self.optional_space = match.group("OptionalSpace")
         self.args, self.kwargs = self._parse_options(match.group("Options"))
         self.disambiguator = None

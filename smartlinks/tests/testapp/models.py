@@ -15,9 +15,7 @@ class PersonManager(models.Manager):
                 raise Person.DoesNotExist
             return self.model.objects.get(name__iexact=link_text, no=no)
         return self.model.objects.get(name__iexact=link_text)
-        
-    def smartlink_fallback(self, link_text, disambiguator=None, arg=None):
-        return '<cite class="unresolved">%s</cite>' % link_text
+
 
 
 class Person(models.Model):
@@ -63,9 +61,7 @@ class TitleManager(models.Manager):
             if match:
                 return self.model.objects.get(name__iexact=link_text[:match.start()].strip(), year=match.group(1))
             raise e
-        
-    def smartlink_fallback(self, link_text, disambiguator=None, arg=None):
-        return '<cite class="unresolved">%s</cite>' % link_text
+
 
 class Title(models.Model):
     name = models.CharField(max_length=200)
@@ -132,6 +128,9 @@ class ClipManager(models.Manager):
             raise self.model.MultipleObjectsReturned
         return self.model.objects.get(film=film, number=disambiguator)
 
+    def smartlink_fallback(self, link_text, disambiguator=None, arg=None):
+        return '<cite class="unresolved">%s</cite>' % link_text
+
 class Clip(models.Model):
     film = models.ForeignKey(Title)
     number = models.IntegerField(max_length=10)
@@ -157,3 +156,13 @@ class Dog(models.Model):
 
     def get_absolute_url(self):
         return '/dog/%s/' % (self.name) # should escape but this is just a test
+
+
+PERSONALITIES = ['grumpy', 'grouchy']
+class Cat(models.Model):
+    """Smartlinks-unaware model, to test default behaviour"""
+    name = models.CharField(max_length=200)
+    personality = models.CharField(max_length=126, choices=((x,x) for x in PERSONALITIES))
+
+    def get_absolute_url(self):
+        return '/cat/%s-%s/' % (self.personality, self.name) # should escape but this is just a test
