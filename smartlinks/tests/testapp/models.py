@@ -148,3 +148,12 @@ class Clip(models.Model):
     
     def smartlink(self, search_term):
         return '<a href="%sclip/%s/">%s</a>' % (self.film.get_absolute_url(), self.number, search_term)
+
+
+class Dog(models.Model):
+    """Smartlinks-unaware model, to test default behaviour"""
+    name = models.CharField(max_length=200)
+    breed = models.CharField(max_length=126)
+
+    def get_absolute_url(self):
+        return '/dog/%s/' % (self.name) # should escape but this is just a test

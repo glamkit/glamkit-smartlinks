@@ -88,11 +88,15 @@ class SmartLinksParser(object):
             qs = {}
             sf = model.smartlink_opts["search_field"]
             qs[sf.generate()] = self.search_term
-            if "disambiguator" in model.smartlink_opts and self.disambiguator:
-                dmb = model.smartlink_opts["disambiguator"]
-                qs[dmb.generate()] = self.disambiguator
-            return model.objects.get(**qs) # let's pray that wouldn't raise a FieldError...
-                 
+            try:
+                return model.objects.get(**qs) # let's pray that wouldn't raise a FieldError...
+            except model.MultipleObjectsReturned:
+                if "disambiguator" in model.smartlink_opts and self.disambiguator:
+                    dmb = model.smartlink_opts["disambiguator"]
+                    qs[dmb.generate()] = self.disambiguator
+                    return model.objects.get(**qs) # try again, it just might give us a single result!
+                else:
+                    raise
         else:
             if hasattr(model.objects, "get_from_smartlink"):
                 obj = model.objects.get_from_smartlink(self.search_term, disambiguator=self.disambiguator, arg=self.arg)
