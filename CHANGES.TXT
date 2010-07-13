@@ -1,2 +1,4 @@
 v0.5.0, 2010-06-28 -- Initial release.
 v0.5.1, 2010-06-28 -- Package was incomplete - fixed.
+v0.6.0, 2010-07-02 -- extended syntax - first beta release
+v0.6.1, 2010-07-02 -- example settings now match docs
