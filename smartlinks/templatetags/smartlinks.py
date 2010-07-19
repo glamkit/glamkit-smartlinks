@@ -8,7 +8,7 @@ from django.utils.safestring import mark_safe
 from django.core.urlresolvers import reverse
 from django.utils.encoding import smart_str
 
-from ..smartlinks.utils import smartlinksconf
+from ..utils import smartlinksconf
 
 register = template.Library()
 
