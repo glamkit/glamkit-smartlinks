@@ -113,7 +113,7 @@ class SmartLinksParser(object):
                         raise
         else:
             if hasattr(model.objects, "get_from_smartlink"):
-                obj = model.objects.get_from_smartlink(self.search_term, disambiguator=self.disambiguator, arg=self.arg)
+                obj = model.objects.get_from_smartlink(self.search_term, disambiguator=self.disambiguator, key_term=self.key_term, arg=self.arg)
             else:
                 if "slug" in fields:
                     obj = model.objects.get(slug=slugify(self.search_term)) # what if model does not have an attribute 'slug'?
