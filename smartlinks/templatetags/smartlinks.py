@@ -149,7 +149,7 @@ class SmartLinksParser(object):
             return self._return_ambiguous()            
         except (model.DoesNotExist):
             if hasattr(model.objects, "smartlink_fallback"):
-                return model.objects.smartlink_fallback(self.search_term, disambiguator=self.disambiguator, arg=self.arg)
+                return model.objects.smartlink_fallback(self.search_term, disambiguator=self.disambiguator, key_term=self.key_term, arg=self.arg)
             return self._return_unresolved()
         return self._handle_object(obj)
         
