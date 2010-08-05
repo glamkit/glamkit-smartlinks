@@ -110,7 +110,7 @@ class SmartLinksParser(object):
                         qs[dmb.generate()] = self.disambiguator
                         return model.objects.get(**qs) # try again, it just might give us a single result!
                     else:
-                        raise
+                        raise 
         else:
             if hasattr(model.objects, "get_from_smartlink"):
                 obj = model.objects.get_from_smartlink(self.search_term, disambiguator=self.disambiguator, key_term=self.key_term, arg=self.arg)
@@ -130,9 +130,9 @@ class SmartLinksParser(object):
             try:
                 obj = self._get_object(model)
                 break
-            except (model.DoesNotExist):
+            except model.DoesNotExist:
                 continue
-            except (model.MultipleObjectsReturned):
+            except model.MultipleObjectsReturned:
                 return self._return_ambiguous()
         if obj:
             return self._handle_object(obj) 
@@ -145,9 +145,9 @@ class SmartLinksParser(object):
             return self._return_identity()
         try:
             obj = self._get_object(model)
-        except (model.MultipleObjectsReturned):
+        except model.MultipleObjectsReturned:
             return self._return_ambiguous()            
-        except (model.DoesNotExist):
+        except: # picks up model.DoesNotExist, and other sundry errors (ValueError etc.) They should all return the fallback.
             if hasattr(model.objects, "smartlink_fallback"):
                 return model.objects.smartlink_fallback(self.search_term, disambiguator=self.disambiguator, key_term=self.key_term, arg=self.arg)
             return self._return_unresolved()
