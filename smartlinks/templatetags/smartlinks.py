@@ -16,7 +16,6 @@ smartlinked_models = None
 def configure():
     global smartlinked_models
     smartlinked_models = smartlinksconf(settings.SMARTLINKS)
-# configure() # this is the sneaky fucker !!!!!!!!!!!!!!!!!!!!!!!!
 
 smartlink_finder = re.compile(r"""
                     (?<![\\])                                        # do NOT match things preceded by a slash
