@@ -8,7 +8,7 @@ from django.utils.safestring import mark_safe
 from django.core.urlresolvers import reverse
 from django.utils.encoding import smart_str
 
-from ..utils import smartlinksconf
+from ..utils import smartlinksconf, get_field_names
 
 register = template.Library()
 
@@ -87,12 +87,11 @@ class SmartLinksParser(object):
         model.DoesNotExist
         model.MultipleObjectsReturned
         """
-        fields = [f.name for f in model._meta.fields]
+        fields = get_field_names(model)
         qs = {}
 
         key_field = model.smartlink_opts.get('key_field')
         search_field = model.smartlink_opts.get('search_field')
-
         if key_field or search_field:
             if key_field and self.key_term:
                 qs[key_field.generate()] = self.key_term
