@@ -114,7 +114,7 @@ def smartlinksconf(args):
         model = None
         if len(tokens) == 2:
             model = get_model(tokens[0], tokens[1])
-        if not model and len(tokens) > 2:
+        if not model and len(tokens) >= 2:
             try:
                 module = __import__('.'.join(tokens[:-1]),
                                     fromlist=[tokens[-1]])
