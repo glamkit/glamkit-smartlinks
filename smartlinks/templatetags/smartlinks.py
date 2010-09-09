@@ -12,7 +12,7 @@ from ..smartlinks.utils import smartlinksconf
 
 register = template.Library()
 
-smartlinked_models = smartlinksconf(settings.SMARTLINKS)
+smartlinked_models = smartlinksconf(getattr(settings, 'SMARTLINKS', []))
 
 smartlink_finder = re.compile(r"""
                     (?<![\\])                                        # do NOT match things preceded by a slash
