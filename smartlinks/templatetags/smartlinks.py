@@ -8,7 +8,7 @@ from django.utils.safestring import mark_safe
 from django.core.urlresolvers import reverse
 from django.utils.encoding import smart_str
 
-from ..utils import smartlinksconf
+from ..utils import smartlinksconf, get_field_names
 
 register = template.Library()
 
@@ -16,7 +16,6 @@ smartlinked_models = None
 def configure():
     global smartlinked_models
     smartlinked_models = smartlinksconf(getattr(settings, 'SMARTLINKS', []))
-configure()
 
 smartlink_finder = re.compile(r"""
                     (?<![\\])                                        # do NOT match things preceded by a slash
@@ -25,7 +24,7 @@ smartlink_finder = re.compile(r"""
                         (\:(?P<KeyTerm>[^\[]+)?)?                        # value to search in key_field
                         ((?P<OptionalSpace>\s+))?                      # optional space
                             \[
-                                \s* (?P<SearchTerm>[-\w\'\"<>:\s\(\)]+) \s*   # query string
+                                \s* (?P<SearchTerm>[^\]]+) \s*   # query string
                             \] \s*
                         ((?P<Options>[\w\. /\\|\(\)=]+))?                    # options
                     \]
@@ -47,7 +46,9 @@ smartembed_finder = re.compile(r"""
 
 class SmartLinksParser(object):
     def __init__(self, arg):
+        self.link_only = False
         self.arg = arg
+        configure()
         
     def _return_identity(self):
         return self.match.group()
@@ -66,6 +67,8 @@ class SmartLinksParser(object):
         @returns 
         link corresponding to the object obj
         """
+        if self.link_only:
+            return obj.get_absolute_url()
         if hasattr(obj, "smartlink"):
             return obj.smartlink(self.search_term, *self.args, **self.kwargs)
         else:
@@ -84,12 +87,11 @@ class SmartLinksParser(object):
         model.DoesNotExist
         model.MultipleObjectsReturned
         """
-        fields = [f.name for f in model._meta.fields]
+        fields = get_field_names(model)
         qs = {}
 
         key_field = model.smartlink_opts.get('key_field')
         search_field = model.smartlink_opts.get('search_field')
-
         if key_field or search_field:
             if key_field and self.key_term:
                 qs[key_field.generate()] = self.key_term
@@ -110,7 +112,7 @@ class SmartLinksParser(object):
                         qs[dmb.generate()] = self.disambiguator
                         return model.objects.get(**qs) # try again, it just might give us a single result!
                     else:
-                        raise
+                        raise 
         else:
             if hasattr(model.objects, "get_from_smartlink"):
                 obj = model.objects.get_from_smartlink(self.search_term, disambiguator=self.disambiguator, key_term=self.key_term, arg=self.arg)
@@ -130,9 +132,13 @@ class SmartLinksParser(object):
             try:
                 obj = self._get_object(model)
                 break
-            except (model.DoesNotExist):
+            except model.DoesNotExist:
+                if self.link_only:
+                    raise
                 continue
-            except (model.MultipleObjectsReturned):
+            except model.MultipleObjectsReturned:
+                if self.link_only:
+                    raise
                 return self._return_ambiguous()
         if obj:
             return self._handle_object(obj) 
@@ -145,11 +151,15 @@ class SmartLinksParser(object):
             return self._return_identity()
         try:
             obj = self._get_object(model)
-        except (model.MultipleObjectsReturned):
+        except model.MultipleObjectsReturned:
+            if self.link_only:
+                raise
             return self._return_ambiguous()            
-        except (model.DoesNotExist):
+        except: # picks up model.DoesNotExist, and other sundry errors (ValueError etc.) They should all return the fallback.
+            if self.link_only:
+                raise
             if hasattr(model.objects, "smartlink_fallback"):
-                return model.objects.smartlink_fallback(self.search_term, disambiguator=self.disambiguator, arg=self.arg)
+                return model.objects.smartlink_fallback(self.search_term, disambiguator=self.disambiguator, key_term=self.key_term, arg=self.arg)
             return self._return_unresolved()
         return self._handle_object(obj)
         
@@ -179,7 +189,9 @@ class SmartLinksParser(object):
             return self._parse_dumblink()
         return self._parse_smartlink()
         
-
+    def parse_url(self, match):
+        self.link_only = True
+        return self.parse_link(match)
 
     def _parse_options(self, value):
         args = []
@@ -244,3 +256,6 @@ def smartlinks(value, arg=None):
     value = smartlink_finder.sub(SmartLinksParser(arg).parse_link, value)
     value = smartembed_finder.sub(SmartEmbedsParser(arg).parse_embed, value)
     return mark_safe(value)
+    
+def smarturl(value, arg=None):
+    value = smartlink_finder.sub(SmartLinksParser(arg).parse_url, value)

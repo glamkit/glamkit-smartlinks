@@ -1,4 +1,4 @@
-search_types = {"equals": 1, "icontains": 2, "iexact": 3}
+search_types = {"equals": 1, "icontains": 2, "iexact": 3, "year": 4}
 search_types_lookup = dict([(value, key) for key, value in search_types.items()])
 
 SearchType = type("SearchType", (object,), search_types)

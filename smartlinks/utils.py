@@ -3,6 +3,11 @@ import re
 from django.db.models.loading import get_model
 from django.utils.datastructures import SortedDict
 
+def get_field_names(cls):
+    if cls.__base__.__module__.startswith('mongoengine'):
+        return cls._fields.keys()
+    else:
+        return [f.name for f in cls._meta.fields]
 
 def smartlinkable(cls, **smartlink_opts):
     cls_name = cls.__name__
@@ -36,8 +41,8 @@ def smartlinkable(cls, **smartlink_opts):
         
         sf = smartlink_opts[search_type]
         validate_field(sf.field)
-            
-    fields = [f.name for f in cls._meta.fields]
+
+    fields = get_field_names(cls)
     if "search_field" in smartlink_opts:
         validate_search_field("search_field", smartlink_opts, fields)
         validate_search_field("disambiguator", smartlink_opts, fields)
@@ -106,9 +111,17 @@ def smartlinksconf(args):
 
         # import the appropriate class
         tokens = addr.split(".")
-        if not len(tokens) == 2:
-            raise_import_error(addr)
-        model = get_model(tokens[0], tokens[1])
+        model = None
+        if len(tokens) == 2:
+            model = get_model(tokens[0], tokens[1])
+        if not model and len(tokens) >= 2:
+            try:
+                module = __import__('.'.join(tokens[:-1]),
+                                    fromlist=[tokens[-1]])
+            except ImportError:
+                pass
+            else:
+                model = getattr(module, tokens[-1], None)
         if not model:
             raise_import_error(addr)
         smartlinkable_model = smartlinkable(model, **opts)
@@ -179,6 +192,4 @@ def words2num(s):
         tokens = [t for t in s.split() if not t in ("and", " ")]
         
         return up2million(tokens)
-        
-        
-    
+
