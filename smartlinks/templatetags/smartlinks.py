@@ -15,7 +15,7 @@ register = template.Library()
 smartlinked_models = None
 def configure():
     global smartlinked_models
-    smartlinked_models = smartlinksconf(settings.SMARTLINKS)
+    smartlinked_models = smartlinksconf(getattr(settings, 'SMARTLINKS', []))
 configure()
 
 smartlink_finder = re.compile(r"""
