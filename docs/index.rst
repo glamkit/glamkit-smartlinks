@@ -251,11 +251,11 @@ Options are written as a dictionary containing the following self-explanatory at
 * "disambiguator"
 * "key_field"
 
-Each attribute should be an instance of ``SearchField``, which takes two parameters - the field name, and the SearchType. There are three SearchTypes currently defined:
+Each attribute should be an instance of ``SearchField``, which takes two parameters - the field name, and the ``SearchType``. There are three SearchTypes currently defined:
 
-* SearchType.equals (the default)
-* SearchType.icontains
-* SearchType.iexact
+* ``SearchType.equals`` (the default)
+* ``SearchType.icontains``
+* ``SearchType.iexact``
 
 .. _smartlinks-hooks:
 
