@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup(name='glamkit-smartlinks',
-    version='0.6.1',
+    version='0.6.1', # remember to also bump version and release in docs/conf.py
     description='Conditional wiki-style links to Django models.',
     author='Thomas Ashelford',
     author_email='thomas@interaction.net.au',
