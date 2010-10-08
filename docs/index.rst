@@ -89,7 +89,7 @@ Given the following model::
     
 you could configure a simple smartlinks syntax that connects the ``title`` field with the linktext component, uses the ``year`` field as a disambiguator, and set the strings 'f', and 'film' as the prefix for this model (see :ref:`smartlinks-config` to learn how to do this).
 
-Now, let's create a ``Film`` object, and try to reference it with samrtlinks::
+Now, let's create a ``Film`` object, and try to reference it with smartlinks::
 
     >>> f1 = Film(title="The Wicker Man", slug="wicker-man", year=1973)
     >>> f1.save()
@@ -139,7 +139,7 @@ As you can see, the disambiguator is generally not rendered in the output.
 
 Now if we add another film::
 
-    >>> f3 = Film(title="The Wicker Basket", slug="wicker-basket", year=2010)
+    >>> f3 = Film(title="The Wicker Basket", slug="wicker-basket", year=2525)
     >>> f3.save()
     
 Now our earlier markup: ``[f[The Wicker Basket]]`` will resolve to::
