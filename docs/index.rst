@@ -264,7 +264,7 @@ Smartlinks hooks
 
 For more advanced configuration, you can add the following hooks to your models.
 
-* 'get_from_smartlink' function in model manager - getting the instance. For example::
+* ``get_from_smartlink`` function in model manager - getting the instance. For example::
     
     def get_from_smartlink(self, link_text, disambiguator=None, key_term=None, arg=None):
         if key_term:
@@ -274,12 +274,12 @@ For more advanced configuration, you can add the following hooks to your models.
         except self.model.MultipleObjectsReturned:
             return self.model.objects.get(Q(title__iexact=link_text) | Q(_main_heading__iexact=link_text) | Q(_menu_name__iexact=link_text), Q(pk=disambiguator))
         
-* 'smartlink_fallback' function in model manager - what happens when no corresponding entity is found::
+* ``smartlink_fallback`` function in model manager - what happens when no corresponding entity is found::
     
     def smartlink_fallback(self, link_text, disambiguator=None, key_term=None, arg=None):
         return '<cite class="unresolved">%s</cite>' % link_text
 
-* 'smartlink' function in model definition - how smartlink should be rendered. Options in the smartlink are passed as "args" and "kwargs". In case if it's not specified, a link to the model (with url from get_absolute_url) and a text inside a smartlink is generated::
+* ``smartlink`` function in model definition - how smartlink should be rendered. Options in the smartlink are passed as "args" and "kwargs". In case if it's not specified, a link to the model (with url from get_absolute_url) and a text inside a smartlink is generated::
     
     def smartlink(self, search_term, *args, **kwargs):
         return '<a href="/person/%s/">%s</a>' % (self.slug, search_term)
