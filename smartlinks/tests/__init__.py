@@ -32,9 +32,6 @@ class SmartLinksTest(unittest.TestCase):
                                             'key_field': SearchField('name')}),
         )
 
-        from smartlinks.templatetags.smartlinks import configure
-        configure()
-
         template = Template("{% load smartlinks %}{{ dat|smartlinks }}")
         template_arg = Template("{% load smartlinks %}{{ dat|smartlinks:arg }}")
 
@@ -132,7 +129,6 @@ class SmartLinksTest(unittest.TestCase):
         self.ae(smartlink('[t[On Our Selection]1930]'), '<a href="/title/on-our-selection-1930/">On Our Selection</a>')
         
     def testSmartness(self):
-        
         #Other disambiguator in link text
         self.ae(smartlink('[t[On Our Selection (1930)]]'), '<a href="/title/on-our-selection-1930/">On Our Selection (1930)</a>')
         self.ae(smartlink('[t[Mad Max (1949)]]'), '<span class="smartlinks-unresolved">Mad Max (1949)</span>')
@@ -236,7 +232,6 @@ class SmartLinksTest(unittest.TestCase):
 
     def testEscaping(self):
         #it is possible to put smartlinks inside square brackets
-
         self.ae(smartlink('[[t[Mad Max]]]'), '[<a href="/title/mad-max-1979/">Mad Max</a>]')
         
         # smartlinks can be escaped by specifying a slash in front of the

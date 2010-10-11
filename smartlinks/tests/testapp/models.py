@@ -6,7 +6,7 @@ from django.template.defaultfilters import slugify
 from smartlinks.utils import words2num
 
 class PersonManager(models.Manager):
-    def get_from_smartlink(self, link_text, disambiguator=None, arg=None):
+    def get_from_smartlink(self, link_text, disambiguator=None, key_term=None, arg=None):
         if disambiguator:
             # disambiguator has to be a number
             try:
@@ -45,7 +45,7 @@ class Person(models.Model):
         return u"%s (%s)" % (self.name, self.no)
 
 class TitleManager(models.Manager):
-    def get_from_smartlink(self, link_text, disambiguator=None, arg=None):
+    def get_from_smartlink(self, link_text, disambiguator=None, key_term=None, arg=None):
         year_pointer = re.compile(r"\(\s*(\d+)\s*\)")
         if disambiguator:
             # disambiguator has to be a number
@@ -83,7 +83,7 @@ class Title(models.Model):
         return u"%s (%s)" % (self.name, self.year)
         
 class ClipManager(models.Manager):
-    def get_from_smartlink(self, link_text, disambiguator=None, arg=None):
+    def get_from_smartlink(self, link_text, disambiguator=None, key_term=None, arg=None):
         # disambiguator is used to distinguish movies from one another 
         matcher = re.compile(r"clip (?P<ClipNumber>.+?) (from|of) (?P<FilmName>.+)", re.IGNORECASE)
         m = matcher.match(link_text)
@@ -128,7 +128,7 @@ class ClipManager(models.Manager):
             raise self.model.MultipleObjectsReturned
         return self.model.objects.get(film=film, number=disambiguator)
 
-    def smartlink_fallback(self, link_text, disambiguator=None, arg=None):
+    def smartlink_fallback(self, link_text, disambiguator=None, key_term=None, arg=None):
         return '<cite class="unresolved">%s</cite>' % link_text
 
 class Clip(models.Model):
