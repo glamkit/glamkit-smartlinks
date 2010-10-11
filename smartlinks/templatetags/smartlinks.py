@@ -24,7 +24,7 @@ smartlink_finder = re.compile(r"""
                         (\:(?P<KeyTerm>[^\[]+)?)?                        # value to search in key_field
                         ((?P<OptionalSpace>\s+))?                      # optional space
                             \[
-                                \s* (?P<SearchTerm>[^\]]+) \s*   # query string
+                                \s* (?P<SearchTerm>[^]\[]+) \s*   # query string
                             \] \s*
                         ((?P<Options>[\w\. /\\|\(\)=]+))?                    # options
                     \]
