@@ -190,10 +190,7 @@ As with most Django applications, you should add 'smartlinks' to the INSTALLED_A
 
 Add a SMARTLINKS setting to your settings file
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-The SMARTLINKS setting is a tuple of smartlinks definitions for each of the Django models you'd like to configure to work with smartlinks. If you're not yet ready to start configuring smartlinks, you can set SMARTLINKS to an empty tuple to avoid throwing an error::
-
-    SMARTLINKS = ()
-
+The SMARTLINKS setting is a tuple of smartlinks definitions for each of the Django models you'd like to configure to work with smartlinks.
 
 .. _smartlinks-config:
 
