@@ -1,7 +1,0 @@
-from smartlinks.search_types import SearchField, SearchType
-
-SMARTLINKS = (
-    (('f', 'film',), 'collection.Film', {"search_field": SearchField("name"), "disambiguator": SearchField("year", SearchType.equals), 'key_field': SearchField("slug", SearchType.equals)}),
-    (('v', 'venue',), 'locations.Venue', {"search_field": SearchField("name")}),
-    (('', 'p', 'page'), "page.page", {"search_field": SearchField("title"), "disambiguator": SearchField("parent.title"), 'key_field': SearchField('id')}),
-)

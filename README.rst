@@ -1,9 +1,6 @@
-==================
-GLAMkit-smartlinks
-==================
+This repository has a new location
+----------------------------------
 
-Conditional wiki-style links to Django models. For more information, see the `documentation <http://docs.glamkit.org/documentation/smartlinks/>`_.
+``github.com/glamkit`` repositories have been deprecated in favour of the ixc forks. This repository is now at https://github.com/ixc/glamkit-smartlinks.
 
-GLAMkit-smartlinks is part of the `GLAMkit framework <http://glamkit.org/>`_.
-
-Dependencies: None
+Please update your pip requirements etc. to use the new fork.

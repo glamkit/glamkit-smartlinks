@@ -1,5 +1,0 @@
-Thomas Ashelford <thomas@interaction.net.au>
-George Karpenkov <admin@metaworld.ru>
-Aram Dulyan <aram@interaction.net.au>
-Wil Tan <dready@gmail.com>
-Oktay Sancak <oktaysancak@gmail.com>

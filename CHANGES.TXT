@@ -1,5 +1,0 @@
-v0.5.0, 2010-06-28 -- Initial release.
-v0.5.1, 2010-06-28 -- Package was incomplete - fixed.
-v0.6.0, 2010-07-02 -- extended syntax - first beta release
-v0.6.1, 2010-07-02 -- example settings now match docs
-v0.6.2, 2010-08-11 -- docs now stored locally, instead of in glamkit core, mongo support and (undocumented) smarturls
